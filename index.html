@@ -1,365 +1,487 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>五月天5525点歌机</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        /* 背景图配置区 */
-        body {
-            background: url('images/bg.png') center/cover fixed;
-            min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            font-family: 'Microsoft YaHei', sans-serif;
+      /* 背景图配置区 */
+      body {
+        background: url("images/bg.png") center/cover fixed;
+        min-height: 100vh;
+        padding: 20px;
+        position: relative;
+        font-family: "Microsoft YaHei", sans-serif;
+      }
+
+      body::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        color: white;
+      }
+
+      /* 专辑选择样式 */
+      .album-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .album-item {
+        border: 2px solid transparent;
+        border-radius: 10px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .album-item.selected {
+        border-color: #4a90e2;
+        background: rgba(74, 144, 226, 0.3);
+        box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
+      }
+
+      .album-cover {
+        width: 100%;
+        padding-bottom: 100%;
+        /* 保持正方形 */
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background-size: cover;
+        background-position: center;
+      }
+
+      /* 控制面板 */
+      .control-panel {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+
+      /* 按钮样式 */
+      .random-btn {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #4a90e2, #2b6cb0);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: transform 0.2s;
+        margin-top: 20px;
+      }
+
+      .random-btn:disabled {
+        background: #666;
+        cursor: not-allowed;
+      }
+
+      .random-btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      /* 结果显示 */
+      .result-display {
+        font-size: 2.5rem;
+        text-align: center;
+        padding: 30px;
+        margin-top: 25px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 15px;
+        animation: popIn 0.5s;
+      }
+
+      @keyframes popIn {
+        0% {
+          transform: scale(0);
+          opacity: 0;
         }
 
-        body::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: -1;
+        80% {
+          transform: scale(1.1);
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            color: white;
+        100% {
+          transform: scale(1);
+          opacity: 1;
         }
+      }
 
-        /* 专辑选择样式 */
-        .album-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .album-item {
-            border: 2px solid transparent;
-            border-radius: 10px;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .album-item.selected {
-            border-color: #4a90e2;
-            background: rgba(74, 144, 226, 0.3);
-            box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
-        }
-
-        .album-cover {
-            width: 100%;
-            padding-bottom: 100%;
-            /* 保持正方形 */
-            border-radius: 8px;
-            margin-bottom: 8px;
-            background-size: cover;
-            background-position: center;
-        }
-
-        /* 控制面板 */
-        .control-panel {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 25px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-
-        /* 按钮样式 */
-        .random-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #4a90e2, #2b6cb0);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-            margin-top: 20px;
-        }
-
-        .random-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-
-        .random-btn:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        /* 结果显示 */
+      /* 移动端优化 */
+      @media (max-width: 768px) {
         .result-display {
-            font-size: 2.5rem;
-            text-align: center;
-            padding: 30px;
-            margin-top: 25px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 15px;
-            animation: popIn 0.5s;
+          font-size: 1.8rem;
+          padding: 20px;
         }
 
-        @keyframes popIn {
-            0% {
-                transform: scale(0);
-                opacity: 0;
-            }
-
-            80% {
-                transform: scale(1.1);
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+        .album-grid {
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 10px;
         }
-
-        /* 移动端优化 */
-        @media (max-width: 768px) {
-            .result-display {
-                font-size: 1.8rem;
-                padding: 20px;
-            }
-
-            .album-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 10px;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div id="app">
-        <div class="container">
-            <h1 style="text-align: center; margin-bottom: 15px;"> 五月天5525点歌机 🖐️</h1>
+      <div class="container">
+        <h1 style="text-align: center; margin-bottom: 15px">
+          五月天5525点歌机 🖐️
+        </h1>
 
-            <div class="control-panel">
-                <div style="margin-bottom: 20px;">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" v-model="excludeRegular" style="width: 18px; height: 18px;">
-                        <span>排除5525常规曲目</span>
-                    </label>
-                </div>
+        <div class="control-panel">
+          <div style="margin-bottom: 20px">
+            <label style="display: flex; align-items: center; gap: 8px">
+              <input
+                type="checkbox"
+                v-model="excludeRegular"
+                style="width: 18px; height: 18px"
+              />
+              <span>排除5525常规曲目</span>
+            </label>
+          </div>
 
-                <h3 style="margin-bottom: 15px;">选择专辑（可多选）：</h3>
-                <div class="album-grid">
-                    <div v-for="album in albums"
-                        :class="['album-item', {selected: selectedAlbums.includes(album.name)}]"
-                        @click="toggleAlbum(album.name)">
-                        <div class="album-cover" :style="{backgroundImage: `url('${album.image}')`}"></div>
-                        <div style="font-size: 0.9rem;">{{ album.name }}</div>
-                    </div>
-                </div>
-
-                <button class="random-btn" @click="getRandomSong" :disabled="!hasValidSelection">
-                    随机点歌
-                </button>
-
-                <div v-if="currentSong" class="result-display">
-                    {{ currentSong }}
-                </div>
+          <h3 style="margin-bottom: 15px">选择专辑（可多选）：</h3>
+          <div class="album-grid">
+            <div
+              v-for="album in albums"
+              :class="['album-item', {selected: selectedAlbums.includes(album.name)}]"
+              @click="toggleAlbum(album.name)"
+            >
+              <div
+                class="album-cover"
+                :style="{backgroundImage: `url('${album.image}')`}"
+              ></div>
+              <div style="font-size: 0.9rem">{{ album.name }}</div>
             </div>
+          </div>
+
+          <button
+            class="random-btn"
+            @click="getRandomSong"
+            :disabled="!hasValidSelection"
+          >
+            随机点歌
+          </button>
+
+          <div v-if="currentSong" class="result-display">{{ currentSong }}</div>
         </div>
+      </div>
     </div>
 
     <script>
-        const { createApp } = Vue;
+      const { createApp } = Vue;
 
-        // 常规歌单列表（需与用户提供的一致）
-        const regularSongs = new Set([
-            'OAOA',
-            '孙悟空',
-            '入阵曲',
-            '伤心的人别听慢歌',
-            '干杯',
-            '透露',
-            '疯狂世界',
-            '有些事如果现在不做一辈子都不会做了',
-            '约翰蓝侬',
-            '恋爱ING',
-            '志明与春娇',
-            '终结孤单',
-            '憨人',
-            '人生海海',
-            '相信',
-            '九号球',
-            '恒星的恒心',
-            '时光机',
-            '让我照顾你',
-            '天使',
-            '一千个世纪',
-            '我心中尚未崩坏的地方',
-            '我不愿让你一个人',
-            '诺亚方舟',
-            '成名在望',
-            'DNA',
-            '派对动物',
-            '离开地球表面',
-            '突然好想你',
-            '为你写下这首情歌',
-            '转眼',
-            '任意门',
-            '后来的我们',
-            '知足',
-            '倔强',
-            '顽固',
-            '笑忘歌',
-        ]);
+      // 常规歌单列表（需与用户提供的一致）
+      const regularSongs = new Set([
+        "OAOA",
+        "孙悟空",
+        "入阵曲",
+        "伤心的人别听慢歌",
+        "干杯",
+        "透露",
+        "疯狂世界",
+        "有些事如果现在不做一辈子都不会做了",
+        "约翰蓝侬",
+        "恋爱ING",
+        "志明与春娇",
+        "终结孤单",
+        "憨人",
+        "人生海海",
+        "相信",
+        "九号球",
+        "恒星的恒心",
+        "时光机",
+        "让我照顾你",
+        "天使",
+        "一千个世纪",
+        "我心中尚未崩坏的地方",
+        "我不愿让你一个人",
+        "诺亚方舟",
+        "成名在望",
+        "DNA",
+        "派对动物",
+        "离开地球表面",
+        "突然好想你",
+        "转眼",
+        "任意门",
+        "后来的我们",
+        "天天想你",
+        "任性",
+        "知足",
+        "倔强",
+        "顽固",
+        "笑忘歌",
+      ]);
 
-        createApp({
-            data() {
-                return {
-                    excludeRegular: true,
-                    selectedAlbums: [],
-                    currentSong: null,
-                    albums: [
-                        {
-                            name: '第一张创作专辑（疯狂世界）',
-                            year: 1999,
-                            songs: [
-                                '疯狂世界', '拥抱', '透露', '生活', '爱情的模样',
-                                '嘿！我要走了', '轧车', '志明与春娇', 'HOSEE',
-                                '黑白讲', 'I Love You 无望', '风若吹'
-                            ],
-                            image: 'images/album_1.png'
-                        },
-                        {
-                            name: '爱情万岁',
-                            year: 2000,
-                            songs: [
-                                '为什么', '终结孤单', '明白', '心中无别人',
-                                '有你的将来', '憨人', '叫我第一名', '雨眠',
-                                '罗密欧与茱丽叶', '温柔', '爱情万岁', '反而'
-                            ],
-                            image: 'images/aiqing_wansui.png'
-                        },
-                        {
-                            name: '人生海海',
-                            year: 2001,
-                            songs: [
-                                '一颗苹果', '能不能不要说', '好不好', '相信',
-                                'OK啦', '借问众神明', '永远的永远', '彩虹',
-                                '啾啾啾', '纯真', '候鸟', '人生海海'
-                            ],
-                            image: 'images/rensheng_haihai.png'
-                        },
-                        {
-                            name: '时光机',
-                            year: 2003,
-                            songs: [
-                                '轻功', '恒星的恒心', '雌雄同体', '阿姆斯壮',
-                                '而我知道', '赌神', '别惹我', '九号球',
-                                '武装', '时光机', '我们（时时刻刻）', '在这一秒',
-                                '生命有一种绝对', '王子面', '小时候'
-                            ],
-                            image: 'images/shiguang_ji.png'
-                        },
-                        {
-                            name: '神的孩子都在跳舞',
-                            year: 2004,
-                            songs: [
-                                '孙悟空', '倔强', '垃圾车',
-                                '小护士', '让我照顾你', '约翰蓝侬', '回来吧',
-                                '错错错', '晚安 地球人', '超人',
-                                '神的孩子都在跳舞', '圣诞夜惊魂'
-                            ],
-                            image: 'images/dance.png'
-                        },
-                        {
-                            name: '为爱而生',
-                            year: 2006,
-                            songs: [
-                                '为爱而生', '天使', '我又初恋了', '香水',
-                                '摩托车日记', '最重要的小事', '快乐很伟大',
-                                '忘词', '宠上天', '米老鼠', '一千个世纪', '胎音'
-                            ],
-                            image: 'images/weiai_ersheng.png'
-                        },
-                        {
-                            name: '后青春期的诗',
-                            year: 2008,
-                            songs: [
-                                '突然好想你', '生存以上 生活以下',
-                                '你不是真正的快乐', '爆肝', '噢买尬',
-                                '出头天', '我心中尚未崩坏的地方', '春天的呐喊',
-                                '夜访吸血鬼', '如烟', '后青春期的诗', '笑忘歌'
-                            ],
-                            image: 'images/deshi.png'
-                        },
-                        {
-                            name: '第二人生',
-                            year: 2011,
-                            songs: [
-                                '2012', '仓颉', '洗衣机', '歪腰', '干杯',
-                                '星空', '三个傻瓜', '末日', 'OAOA',
-                                '第二人生', '诺亚方舟'
-                            ],
-                            image: 'images/second_life.png'
-                        },
-                        {
-                            name: '自传',
-                            year: 2016,
-                            songs: [
-                                '如果我们不曾相遇', '成名在望', '好好',
-                                '兄弟', '人生有限公司', '后来的我们', '顽固',
-                                '派对动物', '最好的一天', '少年他的奇幻漂流',
-                                '终于结束的起点', '任意门', '转眼'
-                            ],
-                            image: 'images/zizhuan.png'
-                        }
-                    ]
-                }
-            },
-            computed: {
-                hasValidSelection() {
-                    return this.selectedAlbums.length > 0
-                }
-            },
-            methods: {
-                toggleAlbum(albumName) {
-                    const index = this.selectedAlbums.indexOf(albumName)
-                    if (index > -1) {
-                        this.selectedAlbums.splice(index, 1)
-                    } else {
-                        this.selectedAlbums.push(albumName)
-                    }
-                },
-                getRandomSong() {
-                    let pool = [];
-                    this.albums.forEach(album => {
-                        if (this.selectedAlbums.includes(album.name)) {
-                            pool.push(...album.songs)
-                        }
-                    })
-
-                    if (this.excludeRegular) {
-                        pool = pool.filter(song => !regularSongs.has(song))
-                    }
-
-                    if (pool.length === 0) {
-                        this.currentSong = '⚠️ 没有符合条件的歌曲'
-                        return
-                    }
-
-                    // 随机选择
-                    const randomIndex = Math.floor(Math.random() * pool.length)
-                    this.currentSong = pool[randomIndex]
-                }
+      createApp({
+        data() {
+          return {
+            excludeRegular: true,
+            selectedAlbums: [],
+            currentSong: null,
+            albums: [
+              {
+                name: "第一张创作专辑（疯狂世界）",
+                year: 1999,
+                songs: [
+                  "疯狂世界",
+                  "拥抱",
+                  "透露",
+                  "生活",
+                  "爱情的模样",
+                  "嘿！我要走了",
+                  "轧车",
+                  "志明与春娇",
+                  "HOSEE",
+                  "黑白讲",
+                  "I Love You 无望",
+                  "风若吹",
+                ],
+                image: "images/album_1.png",
+              },
+              {
+                name: "爱情万岁",
+                year: 2000,
+                songs: [
+                  "为什么",
+                  "终结孤单",
+                  "明白",
+                  "心中无别人",
+                  "有你的将来",
+                  "憨人",
+                  "叫我第一名",
+                  "雨眠",
+                  "罗密欧与茱丽叶",
+                  "温柔",
+                  "爱情万岁",
+                  "反而",
+                ],
+                image: "images/aiqing_wansui.png",
+              },
+              {
+                name: "人生海海",
+                year: 2001,
+                songs: [
+                  "一颗苹果",
+                  "能不能不要说",
+                  "好不好",
+                  "相信",
+                  "OK啦",
+                  "借问众神明",
+                  "永远的永远",
+                  "彩虹",
+                  "啾啾啾",
+                  "纯真",
+                  "候鸟",
+                  "人生海海",
+                ],
+                image: "images/rensheng_haihai.png",
+              },
+              {
+                name: "时光机",
+                year: 2003,
+                songs: [
+                  "轻功",
+                  "恒星的恒心",
+                  "雌雄同体",
+                  "阿姆斯壮",
+                  "而我知道",
+                  "赌神",
+                  "别惹我",
+                  "九号球",
+                  "武装",
+                  "时光机",
+                  "我们（时时刻刻）",
+                  "在这一秒",
+                  "生命有一种绝对",
+                  "王子面",
+                  "小时候",
+                ],
+                image: "images/shiguang_ji.png",
+              },
+              {
+                name: "神的孩子都在跳舞",
+                year: 2004,
+                songs: [
+                  "孙悟空",
+                  "倔强",
+                  "垃圾车",
+                  "小护士",
+                  "让我照顾你",
+                  "约翰蓝侬",
+                  "回来吧",
+                  "错错错",
+                  "晚安 地球人",
+                  "超人",
+                  "神的孩子都在跳舞",
+                  "圣诞夜惊魂",
+                ],
+                image: "images/dance.png",
+              },
+              {
+                name: "为爱而生",
+                year: 2006,
+                songs: [
+                  "为爱而生",
+                  "天使",
+                  "我又初恋了",
+                  "香水",
+                  "摩托车日记",
+                  "最重要的小事",
+                  "快乐很伟大",
+                  "忘词",
+                  "宠上天",
+                  "米老鼠",
+                  "一千个世纪",
+                  "胎音",
+                ],
+                image: "images/weiai_ersheng.png",
+              },
+              {
+                name: "后青春期的诗",
+                year: 2008,
+                songs: [
+                  "突然好想你",
+                  "生存以上 生活以下",
+                  "你不是真正的快乐",
+                  "爆肝",
+                  "噢买尬",
+                  "出头天",
+                  "我心中尚未崩坏的地方",
+                  "春天的呐喊",
+                  "夜访吸血鬼",
+                  "如烟",
+                  "后青春期的诗",
+                  "笑忘歌",
+                ],
+                image: "images/deshi.png",
+              },
+              {
+                name: "第二人生",
+                year: 2011,
+                songs: [
+                  "2012",
+                  "仓颉",
+                  "洗衣机",
+                  "歪腰",
+                  "干杯",
+                  "星空",
+                  "三个傻瓜",
+                  "末日",
+                  "OAOA",
+                  "第二人生",
+                  "诺亚方舟",
+                ],
+                image: "images/second_life.png",
+              },
+              {
+                name: "自传",
+                year: 2016,
+                songs: [
+                  "如果我们不曾相遇",
+                  "成名在望",
+                  "好好",
+                  "兄弟",
+                  "人生有限公司",
+                  "后来的我们",
+                  "顽固",
+                  "派对动物",
+                  "最好的一天",
+                  "少年他的奇幻漂流",
+                  "终于结束的起点",
+                  "任意门",
+                  "转眼",
+                ],
+                image: "images/zizhuan.png",
+              },
+              {
+                name: "未收录专辑单曲",
+                year: 2025,
+                songs: [
+                  "小太阳",
+                  "开天窗",
+                  "放肆",
+                  "牙关",
+                  "乱世浮生",
+                  "盛夏光年",
+                  "私奔到月球",
+                  "抓狂",
+                  "将军令",
+                  "走火入魔",
+                  "To Find My Paradise",
+                  "金色大街",
+                  "不见不散",
+                  "八月爱人",
+                  "虚弱",
+                  "候鸟",
+                  "Happy.BIRTH.Day",
+                  "这个世界",
+                  "天天想你",
+                  "因为你 所以我",
+                  "这个世界",
+                  "脱胎换骨",
+                  "任性",
+                ],
+                images: "images/weishoulu.png"
+              },
+            ],
+          };
+        },
+        computed: {
+          hasValidSelection() {
+            return this.selectedAlbums.length > 0;
+          },
+        },
+        methods: {
+          toggleAlbum(albumName) {
+            const index = this.selectedAlbums.indexOf(albumName);
+            if (index > -1) {
+              this.selectedAlbums.splice(index, 1);
+            } else {
+              this.selectedAlbums.push(albumName);
             }
-        }).mount('#app')
-    </script>
-</body>
+          },
+          getRandomSong() {
+            let pool = [];
+            this.albums.forEach((album) => {
+              if (this.selectedAlbums.includes(album.name)) {
+                pool.push(...album.songs);
+              }
+            });
 
+            if (this.excludeRegular) {
+              pool = pool.filter((song) => !regularSongs.has(song));
+            }
+
+            if (pool.length === 0) {
+              this.currentSong = "⚠️ 没有符合条件的歌曲";
+              return;
+            }
+
+            // 随机选择
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            this.currentSong = pool[randomIndex];
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
 </html>

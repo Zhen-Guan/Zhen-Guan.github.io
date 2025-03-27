@@ -2,17 +2,13 @@
 <html lang="zh-CN">
   <head>
     <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-D3QE4SDPVJ"
-    ></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-D3QE4SDPVJ"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-D3QE4SDPVJ");
     </script>
     <meta charset="UTF-8" />
@@ -111,15 +107,40 @@
         transform: scale(0.98);
       }
 
-      /* 结果显示 */
-      .result-display {
-        font-size: 2.5rem;
-        text-align: center;
-        padding: 30px;
-        margin-top: 25px;
+      
+      .result-card {
+        display: flex;
+        align-items: center;
         background: rgba(0, 0, 0, 0.5);
         border-radius: 15px;
+        padding: 20px;
+        margin: 25px auto;
         animation: popIn 0.5s;
+        max-width: 600px;
+      }
+
+      .album-cover-display {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        object-fit: cover;
+        margin-right: 20px;
+        border: 2px solid #fff;
+      }
+
+      .song-info {
+        flex: 1;
+      }
+
+      .song-title {
+        font-size: 1.8rem;
+        margin: 0 0 8px;
+      }
+
+      .album-name {
+        font-size: 1.2rem;
+        margin: 0;
+        color: #ccc;
       }
 
       @keyframes popIn {
@@ -127,11 +148,9 @@
           transform: scale(0);
           opacity: 0;
         }
-
         80% {
           transform: scale(1.1);
         }
-
         100% {
           transform: scale(1);
           opacity: 1;
@@ -140,11 +159,12 @@
 
       /* 移动端优化 */
       @media (max-width: 768px) {
-        .result-display {
-          font-size: 1.8rem;
-          padding: 20px;
+        .song-title {
+          font-size: 1.5rem;
         }
-
+        .album-name {
+          font-size: 1rem;
+        }
         .album-grid {
           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
           gap: 10px;
@@ -152,7 +172,6 @@
       }
     </style>
   </head>
-
   <body>
     <div id="app">
       <div class="container">
@@ -195,7 +214,20 @@
             随机点歌
           </button>
 
-          <div v-if="currentSong" class="result-display">{{ currentSong }}</div>
+          <div v-if="chosenSong" class="result-card">
+            <img
+              v-if="chosenSong.image"
+              :src="chosenSong.image"
+              alt="专辑封面"
+              class="album-cover-display"
+            />
+            <div class="song-info">
+              <h2 class="song-title">{{ chosenSong.song }}</h2>
+              <p class="album-name" v-if="chosenSong.album">
+                {{ chosenSong.album }}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -251,7 +283,7 @@
           return {
             excludeRegular: true,
             selectedAlbums: [],
-            currentSong: null,
+            chosenSong: null,
             albums: [
               {
                 name: "第一张创作专辑（疯狂世界）",
@@ -431,7 +463,6 @@
                 name: "知足 Just My Pride 最真杰作选",
                 year: 2005,
                 songs: [
-                  // Disc Land
                   "知足",
                   "牙关",
                   "乱世浮生",
@@ -447,7 +478,6 @@
                   "恒星的恒心",
                   "温柔（还你自由版)",
                   "倔强",
-                  // Disc Sea
                   "金多虾",
                   "麦来乱",
                   "志明与春娇",
@@ -470,7 +500,6 @@
                 name: "步步自选作品辑 The Best of 1999-2013",
                 year: 2013,
                 songs: [
-                  // A面
                   "步步",
                   "拥抱",
                   "伤心的人别听慢歌",
@@ -486,7 +515,6 @@
                   "人生海海",
                   "知足",
                   "温柔",
-                  // B面
                   "你是唯一",
                   "夜访吸血鬼",
                   "如烟",
@@ -557,22 +585,31 @@
             let pool = [];
             this.albums.forEach((album) => {
               if (this.selectedAlbums.includes(album.name)) {
-                pool.push(...album.songs);
+                pool.push(
+                  ...album.songs.map((song) => ({
+                    song,
+                    album: album.name,
+                    image: album.image,
+                  }))
+                );
               }
             });
 
             if (this.excludeRegular) {
-              pool = pool.filter((song) => !regularSongs.has(song));
+              pool = pool.filter((item) => !regularSongs.has(item.song));
             }
 
             if (pool.length === 0) {
-              this.currentSong = "⚠️ 没有符合条件的歌曲";
+              this.chosenSong = {
+                song: "⚠️ 没有符合条件的歌曲",
+                album: "",
+                image: ""
+              };
               return;
             }
 
-            // 随机选择
             const randomIndex = Math.floor(Math.random() * pool.length);
-            this.currentSong = pool[randomIndex];
+            this.chosenSong = pool[randomIndex];
           },
         },
       }).mount("#app");
